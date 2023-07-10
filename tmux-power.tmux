@@ -18,6 +18,10 @@ tmux_set() {
     tmux set-option -gq "$1" "$2"
 }
 
+battery_level(){
+    upower -i $(upower -e | grep "DisplayDevice") | grep "percentage" | awk 'BEGIN{FS=" "}{print $2}'
+}
+
 # Options
 right_arrow_icon=$(tmux_get '@tmux_power_right_arrow_icon' '')
 left_arrow_icon=$(tmux_get '@tmux_power_left_arrow_icon' '')
@@ -33,6 +37,9 @@ show_web_reachable="$(tmux_get @tmux_power_show_web_reachable false)"
 prefix_highlight_pos=$(tmux_get @tmux_power_prefix_highlight_pos)
 time_format=$(tmux_get @tmux_power_time_format '%T')
 date_format=$(tmux_get @tmux_power_date_format '%F')
+battery_icon="$(tmux_get '@tmux_power_battery_icon' '')"
+show_battery="$(tmux_get @tmux_power_show_battery false)"
+
 # short for Theme-Colour
 TC=$(tmux_get '@tmux_power_theme' 'gold')
 case $TC in
@@ -65,6 +72,7 @@ case $TC in
         ;;
 esac
 
+G00=#000000 #000
 G01=#080808 #232
 G02=#121212 #233
 G03=#1c1c1c #234
@@ -79,7 +87,7 @@ G11=#6c6c6c #242
 G12=#767676 #243
 
 FG="$G10"
-BG="$G04"
+BG="$G00"
 
 # Status options
 tmux_set status-interval 1
@@ -95,8 +103,10 @@ tmux_set @prefix_highlight_fg "$BG"
 tmux_set @prefix_highlight_bg "$FG"
 tmux_set @prefix_highlight_show_copy_mode 'on'
 tmux_set @prefix_highlight_copy_mode_attr "fg=$TC,bg=$BG,bold"
-tmux_set @prefix_highlight_output_prefix "#[fg=$TC]#[bg=$BG]$left_arrow_icon#[bg=$TC]#[fg=$BG]"
-tmux_set @prefix_highlight_output_suffix "#[fg=$TC]#[bg=$BG]$right_arrow_icon"
+#tmux_set @prefix_highlight_output_prefix "#[fg=$TC]#[bg=$BG]$left_arrow_icon#[bg=$TC]#[fg=$BG]"
+#tmux_set @prefix_highlight_output_suffix "#[fg=$TC]#[bg=$BG]$right_arrow_icon"
+tmux_set @prefix_highlight_output_prefix "#[fg=$TC]#[bg=$BG]#[bg=$TC]#[fg=$BG]"
+tmux_set @prefix_highlight_output_suffix "#[fg=$TC]#[bg=$BG]"
 
 #     
 # Left side of status bar
@@ -126,20 +136,27 @@ fi
 if "$show_web_reachable"; then
     RS=" #{web_reachable_status} $RS"
 fi
+if "$show_battery"; then
+    battery=$(battery_level)
+    RS=" $battery_icon $battery $RS"
+fi
+
 if [[ $prefix_highlight_pos == 'R' || $prefix_highlight_pos == 'LR' ]]; then
     RS="#{prefix_highlight}$RS"
 fi
 tmux_set status-right "$RS"
 
 # Window status
-tmux_set window-status-format " #I:#W#F "
-tmux_set window-status-current-format "#[fg=$BG,bg=$G06]$right_arrow_icon#[fg=$TC,bold] #I:#W#F #[fg=$G06,bg=$BG,nobold]$right_arrow_icon"
+#tmux_set window-status-format " #I:#W#F "
+#tmux_set window-status-current-format "#[fg=$BG,bg=$G06]$right_arrow_icon#[fg=$TC,bold] #I:#W#F #[fg=$G06,bg=$BG,nobold]$right_arrow_icon"
+tmux_set window-status-format " #I:#W "
+tmux_set window-status-current-format "#[fg=$BG,bg=$G06]$right_arrow_icon#[fg=$TC,bold] #I:#W #[fg=$G06,bg=$BG,nobold]$right_arrow_icon"
 
 # Window separator
 tmux_set window-status-separator ""
 
 # Window status alignment
-tmux_set status-justify centre
+tmux_set status-justify left
 
 # Current window status
 tmux_set window-status-current-statys "fg=$TC,bg=$BG"
